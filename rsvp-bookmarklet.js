@@ -53,29 +53,41 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         return d.selection ? d.selection.createRange().text : d.getSelection();
     }
 
-    function show_words(words, $el) {
-        $.each(words, function() {
-            $el.queue(function(next) {
-                $el.html(words.shift());
-                next();
-            }).delay(1000/speed);
-        });
-    }
-
     function initBookmarklet() {
-        $rsvp = $("#rsvp");
+
+        function show_words(words) {
+            $.each(words, function(i, word) {
+                $rsvp.queue(function(next) {
+                    $rsvp.text(word);
+                    index = i;
+                    next();
+                }).delay(1000/speed);
+            });
+        }
+
+        function toggle_pause(stop) {
+            if (queue && !stop) {
+                $rsvp.queue(queue).dequeue();
+                queue = null;
+            } else {
+                queue = $rsvp.queue();
+                $rsvp.queue([]);
+            }
+        }
+
         $('head').append('<style>'
                          + '#rsvp {'
                          + '  position: absolute;'
                          + '  top: 0; left: 0;'
                          + '  width: 100%;'
                          + '  text-align: center;'
-                         + '  color: white;'
                          + '  font-size: 50;'
-                         + '  background: black;'
+                         + '  color: white;'
+                         + '  background: rgba(0,0,0,0.8);'
                          + '}'
                          + '</style>');
         $('body').append("<div id='rsvp'></div>");
+        var $rsvp = $("#rsvp");
 
         // Click the RSVP bar to close it
         $rsvp.click(function (ev) {
@@ -83,23 +95,19 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         });
 
         // Spacebar to pause
-        var stopped = false;
+        var queue;
         $("body").keypress(function(event) {
+            console.log(event.which);
             if ( event.which == 32 ) {
                 event.preventDefault();
-                if (!stopped) {
-                    $rsvp.queue([]).stop();
-                    stopped = true;
-                } else {
-                    show_words(words, $rsvp);
-                    stopped = false;
-                }
+                toggle_pause();
             }
         });
-
+        var index = 0;
         var selection = sel(document).toString();
         var words = selection.split(/\s+/g);
-        show_words(words, $rsvp);
+
+        show_words(words);
 
     }
 
